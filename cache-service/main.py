@@ -5,7 +5,8 @@ from collections import OrderedDict
 
 # --- Configuración ---
 SCORE_SERVICE_URL = os.getenv("SCORE_SERVICE_URL", "http://localhost:8002/score")
-STORAGE_SERVICE_URL = os.getenv("STORAGE_SERVICE_URL", "http://localhost:8003/storage")
+# Base URL del storage (sin sufijo /storage). El endpoint /hit y /storage se añaden explícitamente.
+STORAGE_SERVICE_URL = os.getenv("STORAGE_SERVICE_URL", "http://localhost:8003")
 
 CACHE_SIZE = int(os.getenv("CACHE_SIZE", 1000))  # Tamaño máximo de la caché
 CACHE_POLICY = os.getenv("CACHE_POLICY", "LRU")  # Política de desalojo (solo LRU soportada de momento)

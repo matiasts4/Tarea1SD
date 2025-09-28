@@ -10,7 +10,7 @@ import random
 CACHE_SERVICE_URL = os.getenv('CACHE_SERVICE_URL', 'http://localhost:8001/query')
 
 # Ruta al archivo de datos (relativa al root del proyecto).
-DATASET_PATH = 'data/train_10k.csv'
+DATASET_PATH = 'data/train_15k.csv'
 
 # Tiempo de espera (en segundos) entre cada envío de pregunta.
 SLEEP_TIME = float(os.getenv('SLEEP_TIME', '1.5'))

@@ -1,0 +1,89 @@
+# docker-compose.yml
+
+version: '3.8'
+
+services:
+  # Servicio de Base de Datos PostgreSQL
+  db:
+    image: postgres:14-alpine
+    container_name: db
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: yahoo_db
+    ports:
+      # Exponemos el puerto de la BD al host para poder inspeccionarla con herramientas externas
+      - "5432:5432"
+    volumes:
+      # Este volumen asegura que los datos de la BD persistan aunque apaguemos los contenedores
+      - postgres_data:/var/lib/postgresql/data
+      # Este script se ejecuta la primera vez que la BD se crea para inicializar nuestra tabla
+      - ./storage-service/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d yahoo_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Servicio de Almacenamiento
+  storage-service:
+    build: ./storage-service
+    container_name: storage-service
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8003:8000"
+    environment:
+      # La URL de la BD ahora apunta al nombre del servicio 'db'
+      DATABASE_URL: "postgresql://user:password@db/yahoo_db"
+
+  # Servicio de Score y Generación de Respuestas
+  score-service:
+    build: ./score-service
+    container_name: score-service
+    restart: always
+    depends_on:
+      - storage-service
+    ports:
+      - "8002:8000"
+    environment:
+      # Apunta al servicio 'storage-service' en el puerto 8000 (dentro de la red de Docker)
+      STORAGE_SERVICE_URL: "http://storage-service:8000/storage"
+      # Pasamos la API Key de Gemini directamente
+      GEMINI_API_KEY: "AIzaSyCctOlhrJFeQyYOf_aMlkvbToI-F4J03II"
+      # Modelo de Gemini a usar
+      GEMINI_MODEL_NAME: "gemini-2.5-flash-lite"
+
+  # Servicio de Caché
+  cache-service:
+    build: ./cache-service
+    container_name: cache-service
+    restart: always
+    depends_on:
+      - score-service
+    ports:
+      - "8001:8000"
+    environment:
+      SCORE_SERVICE_URL: "http://score-service:8000/score"
+      STORAGE_SERVICE_URL: "http://storage-service:8000" # URL para notificar hits
+      CACHE_SIZE: 1500
+      CACHE_POLICY: "LRU"
+
+  # Generador de Tráfico
+  traffic-generator:
+    build: ./traffic-generator
+    container_name: traffic-generator
+    # No necesita 'restart: always' porque es un script que corre y no un servidor
+    depends_on:
+      - cache-service
+    environment:
+      CACHE_SERVICE_URL: "http://cache-service:8000/query"
+    volumes:
+      # Montar la carpeta data del host para acceder al dataset
+      - ./data:/app/data:ro
+
+# Volumen nombrado para persistir los datos de PostgreSQL
+volumes:
+  postgres_data:
