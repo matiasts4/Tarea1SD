@@ -1,0 +1,12 @@
+experiment,policy,size,ttl,hits,misses,evictions,expirations,hit_rate
+LRU_size1500_ttl0_sleep0.5,LRU,1500,0,48,219,0,0,17.98
+FIFO_size1500_ttl0_sleep1.5,FIFO,1500,0,17,128,0,0,11.72
+LRU_size1500_ttl600_sleep1.5,LRU,1500,600,19,169,0,0,10.11
+LRU_size500_ttl0_sleep1.5,LRU,500,0,13,128,0,0,9.22
+LRU_size1500_ttl300_sleep1.5,LRU,1500,300,14,163,0,1,7.91
+LFU_size1500_ttl0_sleep1.5,LFU,1500,0,10,130,0,0,7.14
+LRU_size1000_ttl0_sleep1.5,LRU,1000,0,10,131,0,0,7.09
+LRU_size2000_ttl0_sleep1.5,LRU,2000,0,8,134,0,0,5.63
+LRU_size1500_ttl0_sleep1.5,LRU,1500,0,7,130,0,0,5.11
+LRU_size1500_ttl60_sleep1.5,LRU,1500,60,9,177,0,13,4.84
+LRU_size1500_ttl0_sleep3.0,LRU,1500,0,3,84,0,0,3.45

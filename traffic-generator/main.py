@@ -15,6 +15,13 @@ DATASET_PATH = 'data/train_15k.csv'
 # Tiempo de espera (en segundos) entre cada envío de pregunta.
 SLEEP_TIME = float(os.getenv('SLEEP_TIME', '1.5'))
 
+# Porcentaje de preguntas que serán repeticiones de un pool popular (para generar hits)
+# Valor entre 0.0 (sin repeticiones) y 1.0 (solo repeticiones)
+REPEAT_PROBABILITY = float(os.getenv('REPEAT_PROBABILITY', '0.5'))  # 50% por defecto
+
+# Tamaño del pool de preguntas "populares" que se repetirán frecuentemente
+POPULAR_POOL_SIZE = int(os.getenv('POPULAR_POOL_SIZE', '200'))
+
 
 def start_traffic_generator():
     """
@@ -37,12 +44,23 @@ def start_traffic_generator():
         print(f"Error inesperado leyendo el dataset: {e}")
         return
 
-    # 2. Bucle infinito para enviar tráfico constantemente
+    # 2. Crear un pool de preguntas "populares" que se repetirán frecuentemente
+    popular_questions = df.sample(n=min(POPULAR_POOL_SIZE, len(df))).copy()
+    print(f"Pool de preguntas populares creado: {len(popular_questions)} preguntas")
+    print(f"Probabilidad de repetición: {REPEAT_PROBABILITY*100:.1f}%")
+    
+    # 3. Bucle infinito para enviar tráfico constantemente
     print(f"Enviando preguntas a: {CACHE_SERVICE_URL}")
     while True:
         try:
-            # Seleccionar una fila (pregunta) aleatoria del DataFrame
-            random_row = df.sample(n=1).iloc[0]
+            # Decidir si usar una pregunta del pool popular (para generar hits) o una nueva
+            if random.random() < REPEAT_PROBABILITY:
+                # Usar una pregunta del pool popular (más probable que genere hit)
+                random_row = popular_questions.sample(n=1).iloc[0]
+            else:
+                # Usar una pregunta aleatoria del dataset completo (miss seguro)
+                random_row = df.sample(n=1).iloc[0]
+            
             question = random_row['question_title']
             answer = random_row['best_answer']
 
@@ -54,10 +72,10 @@ def start_traffic_generator():
 
             print(f"\nEnviando pregunta: '{question[:80]}...'")
 
-            # 3. Enviar la petición HTTP POST al servicio de caché
+            # 4. Enviar la petición HTTP POST al servicio de caché
             response = requests.post(CACHE_SERVICE_URL, json=payload, timeout=5)  # Timeout de 5s
 
-            # 4. Imprimir la respuesta del servidor
+            # 5. Imprimir la respuesta del servidor
             if response.status_code == 200:
                 # Intentar parsear JSON
                 try:
@@ -76,7 +94,7 @@ def start_traffic_generator():
         except Exception as e:
             print(f"Ocurrió un error inesperado: {e}")
 
-        # 5. Esperar antes de enviar la siguiente pregunta
+        # 6. Esperar antes de enviar la siguiente pregunta
         time.sleep(SLEEP_TIME)
 
 

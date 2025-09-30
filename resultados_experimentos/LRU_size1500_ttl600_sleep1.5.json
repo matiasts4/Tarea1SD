@@ -1,0 +1,1 @@
+{"size":169,"capacity":1500,"policy":"LRU","ttl":600,"hits":19,"misses":169,"evictions":0,"expirations":0,"hit_rate":10.11}

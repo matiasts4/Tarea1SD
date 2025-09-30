@@ -2,6 +2,9 @@
 
 version: '3.8'
 
+# Las variables de entorno se cargan desde el archivo .env
+# Asegúrate de crear .env copiando .env.example y configurando tus valores
+
 services:
   # Servicio de Base de Datos PostgreSQL
   db:
@@ -51,10 +54,9 @@ services:
     environment:
       # Apunta al servicio 'storage-service' en el puerto 8000 (dentro de la red de Docker)
       STORAGE_SERVICE_URL: "http://storage-service:8000/storage"
-      # Pasamos la API Key de Gemini directamente
-      GEMINI_API_KEY: "AIzaSyCctOlhrJFeQyYOf_aMlkvbToI-F4J03II"
-      # Modelo de Gemini a usar
-      GEMINI_MODEL_NAME: "gemini-2.5-flash-lite"
+      # Variables desde .env
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GEMINI_MODEL_NAME: ${GEMINI_MODEL_NAME:-gemini-2.5-flash-lite}
 
   # Servicio de Caché
   cache-service:
@@ -68,8 +70,10 @@ services:
     environment:
       SCORE_SERVICE_URL: "http://score-service:8000/score"
       STORAGE_SERVICE_URL: "http://storage-service:8000" # URL para notificar hits
-      CACHE_SIZE: 1500
-      CACHE_POLICY: "LRU"
+      # Variables configurables desde .env
+      CACHE_SIZE: ${CACHE_SIZE:-1500}
+      CACHE_POLICY: ${CACHE_POLICY:-LRU}
+      CACHE_TTL: ${CACHE_TTL:-0}
 
   # Generador de Tráfico
   traffic-generator:
@@ -80,6 +84,9 @@ services:
       - cache-service
     environment:
       CACHE_SERVICE_URL: "http://cache-service:8000/query"
+      # Variables configurables desde .env
+      SLEEP_TIME: ${SLEEP_TIME:-1.5}
+      INITIAL_WAIT_SECONDS: ${INITIAL_WAIT_SECONDS:-10}
     volumes:
       # Montar la carpeta data del host para acceder al dataset
       - ./data:/app/data:ro
